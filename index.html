@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Optimization Canvas - Eisenhower Matrix</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Task Optimization Canvas</h1>
+            <p>Organize your tasks using the Eisenhower Matrix for maximum productivity</p>
+        </header>
+
+        <div class="control-panel">
+            <div class="task-input-section">
+                <input type="text" id="new-task" placeholder="Enter your task..." maxlength="100" />
+                <textarea id="task-description" placeholder="Task description (optional)..." rows="2"></textarea>
+                <div class="meta-row">
+                    <div class="meta-field">
+                        <label for="due-date">Time Limit</label>
+                        <input type="datetime-local" id="due-date" />
+                    </div>
+                    <div class="meta-field">
+                        <label for="importance">Importance</label>
+                        <select id="importance">
+                            <option value="important" selected>Important</option>
+                            <option value="not-important">Not Important</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-controls">
+                    <button id="add-task">+ Add Task</button>
+                    <button id="clear-all" class="secondary">Clear All</button>
+                    <button id="recalc-urgency" class="secondary small">Recalculate Urgency</button>
+                </div>
+            </div>
+            
+            <div class="stats-panel">
+                <div class="stat">
+                    <span class="stat-number" id="total-tasks">0</span>
+                    <span class="stat-label">Total Tasks</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="completed-count">0</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="matrix-container">
+            <div class="matrix-labels">
+                <div class="axis-label vertical">IMPORTANT</div>
+                <div class="axis-label horizontal">URGENT</div>
+            </div>
+            
+            <div class="matrix-grid">
+                <div class="quadrant q1" data-quadrant="urgent-important">
+                    <div class="quadrant-header">
+                        <h3>DO FIRST</h3>
+                        <span class="quadrant-subtitle">Urgent + Important</span>
+                        <span class="task-count">0</span>
+                    </div>
+                    <div class="task-zone" id="urgent-important-zone"></div>
+                </div>
+
+                <div class="quadrant q2" data-quadrant="not-urgent-important">
+                    <div class="quadrant-header">
+                        <h3>SCHEDULE</h3>
+                        <span class="quadrant-subtitle">Not Urgent + Important</span>
+                        <span class="task-count">0</span>
+                    </div>
+                    <div class="task-zone" id="not-urgent-important-zone"></div>
+                </div>
+
+                <div class="quadrant q3" data-quadrant="urgent-not-important">
+                    <div class="quadrant-header">
+                        <h3>DELEGATE</h3>
+                        <span class="quadrant-subtitle">Urgent + Not Important</span>
+                        <span class="task-count">0</span>
+                    </div>
+                    <div class="task-zone" id="urgent-not-important-zone"></div>
+                </div>
+
+                <div class="quadrant q4" data-quadrant="not-urgent-not-important">
+                    <div class="quadrant-header">
+                        <h3>ELIMINATE</h3>
+                        <span class="quadrant-subtitle">Not Urgent + Not Important</span>
+                        <span class="task-count">0</span>
+                    </div>
+                    <div class="task-zone" id="not-urgent-not-important-zone"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <h2>Progress Tracker</h2>
+            <div class="progress-tabs">
+                <button class="tab-button active" data-tab="completed">Completed Tasks</button>
+                <button class="tab-button" data-tab="analytics">Analytics</button>
+                <button class="tab-button" data-tab="resources">Resources</button>
+            </div>
+            
+            <div class="tab-content active" id="completed-tab">
+                <div id="completed-tasks"></div>
+            </div>
+            
+            <div class="tab-content" id="analytics-tab">
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h4>Productivity Score</h4>
+                        <div class="score" id="productivity-score">0%</div>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>Focus Areas</h4>
+                        <div id="focus-areas">No data yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="resources-tab">
+                <div class="resources-intro">Quick access to your timeline & deadlines pages. Place your existing files (Deadlines.html and GATE_2026_Timeline.html) in the same folder as this app (or update the file names below) for them to load here.</div>
+                <div class="resource-links">
+                    <button class="resource-link" data-file="Deadlines.html">Open Deadlines</button>
+                    <button class="resource-link external" data-url="D:/REDEFINE/WEBSITE/index.html">Open REDEFINE Website</button>
+                </div>
+                <div class="resource-viewer-wrapper">
+                    <iframe id="resource-frame" title="Resource Viewer" sandbox="allow-same-origin allow-scripts allow-forms" referrerpolicy="no-referrer"></iframe>
+                </div>
+                <div class="resource-status" id="resource-status">Select a resource to view it.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Detail Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Task Details</h3>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Deadline Notification Popup -->
+    <div id="deadline-popup" class="deadline-popup hidden">
+        <div class="deadline-popup-content">
+            <div class="deadline-popup-header">
+                <h3>⚠️ Urgent Deadline Alert</h3>
+                <button class="deadline-close" id="deadline-close">×</button>
+            </div>
+            <div class="deadline-popup-body" id="deadline-popup-body">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="deadline-popup-actions">
+                <button class="deadline-snooze" id="deadline-snooze">Snooze 15min</button>
+                <button class="deadline-dismiss" id="deadline-dismiss">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

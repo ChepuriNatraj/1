@@ -1,0 +1,385 @@
+
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>GATE 2026 Timeline</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.hero {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.6), transparent);
+}
+
+.hero-title {
+    font-size: 32px;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 8px;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.hero-subtitle {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 24px;
+}
+
+.countdown-display {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+}
+
+.countdown-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.countdown-unit {
+    text-align: center;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 8px;
+}
+
+.countdown-number {
+    font-size: 32px;
+    font-weight: 900;
+    color: rgba(220, 38, 38, 0.9);
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.countdown-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.timeline {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+.timeline-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.timeline-item {
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s ease;
+}
+
+.timeline-item:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.timeline-item.urgent {
+    border-left: 4px solid rgba(220, 38, 38, 0.7);
+}
+
+.timeline-item.soon {
+    border-left: 4px solid rgba(245, 158, 11, 0.7);
+}
+
+.timeline-item.normal {
+    border-left: 4px solid rgba(34, 197, 94, 0.7);
+}
+
+.item-icon {
+    font-size: 24px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.item-content {
+    flex: 1;
+}
+
+.item-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 4px;
+}
+
+.item-date {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 4px;
+}
+
+.item-desc {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.item-countdown {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+}
+
+.controls {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 20px;
+    text-align: center;
+    margin-top: 24px;
+}
+
+.update-btn {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 24px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.update-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.timestamp {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 16px;
+}
+</style>
+<script>
+function updateCountdown() {
+    const examDate = new Date(2026, 1, 7, 9, 0, 0); // Feb 7, 2026, 9:00 AM
+    const now = new Date();
+    const diff = examDate - now;
+    
+    if (diff <= 0) {
+        document.getElementById('days').textContent = '00';
+        document.getElementById('hours').textContent = '00';
+        document.getElementById('minutes').textContent = '00';
+        document.getElementById('seconds').textContent = '00';
+        return;
+    }
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    document.getElementById('days').textContent = days.toString().padStart(2, '0');
+    document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+    document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+    document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+}
+
+function updateWidget() {
+    window.location.reload();
+}
+
+// Update countdown every second for real-time effect
+setInterval(updateCountdown, 1000);
+updateCountdown();
+</script>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <div class="hero-title">GATE 2026</div>
+            <div class="hero-subtitle">Graduate Aptitude Test in Engineering</div>
+            <div class="countdown-display">
+                <div class="countdown-grid">
+                    <div class="countdown-unit">
+                        <div class="countdown-number" id="days">163</div>
+                        <div class="countdown-label">Days</div>
+                    </div>
+                    <div class="countdown-unit">
+                        <div class="countdown-number" id="hours">00</div>
+                        <div class="countdown-label">Hours</div>
+                    </div>
+                    <div class="countdown-unit">
+                        <div class="countdown-number" id="minutes">00</div>
+                        <div class="countdown-label">Minutes</div>
+                    </div>
+                    <div class="countdown-unit">
+                        <div class="countdown-number" id="seconds">00</div>
+                        <div class="countdown-label">Seconds</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-title">Complete Timeline</div>
+            
+        <div class="timeline-item urgent">
+            <div class="item-icon">📝</div>
+            <div class="item-content">
+                <div class="item-title">Applications Open</div>
+                <div class="item-date">Aug 28, 2026</div>
+                <div class="item-desc">Registration begins</div>
+            </div>
+            <div class="item-countdown">Today</div>
+        </div>
+        
+        <div class="timeline-item normal">
+            <div class="item-icon">⏰</div>
+            <div class="item-content">
+                <div class="item-title">Regular Deadline</div>
+                <div class="item-date">Sep 28, 2026</div>
+                <div class="item-desc">Standard fee</div>
+            </div>
+            <div class="item-countdown">31 days</div>
+        </div>
+        
+        <div class="timeline-item normal">
+            <div class="item-icon">⚠️</div>
+            <div class="item-content">
+                <div class="item-title">Extended Deadline</div>
+                <div class="item-date">Oct 09, 2026</div>
+                <div class="item-desc">Late fee applies</div>
+            </div>
+            <div class="item-countdown">42 days</div>
+        </div>
+        
+        <div class="timeline-item normal">
+            <div class="item-icon">🎯</div>
+            <div class="item-content">
+                <div class="item-title">Exam Weekend 1</div>
+                <div class="item-date">Feb 07-08, 2026</div>
+                <div class="item-desc">First session</div>
+            </div>
+            <div class="item-countdown">163 days</div>
+        </div>
+        
+        <div class="timeline-item normal">
+            <div class="item-icon">🎯</div>
+            <div class="item-content">
+                <div class="item-title">Exam Weekend 2</div>
+                <div class="item-date">Feb 14-15, 2026</div>
+                <div class="item-desc">Second session</div>
+            </div>
+            <div class="item-countdown">170 days</div>
+        </div>
+        
+        <div class="timeline-item normal">
+            <div class="item-icon">🏆</div>
+            <div class="item-content">
+                <div class="item-title">Results</div>
+                <div class="item-date">Mar 19, 2026</div>
+                <div class="item-desc">Result declaration</div>
+            </div>
+            <div class="item-countdown">203 days</div>
+        </div>
+        
+        </div>
+
+        <div class="controls">
+            <button class="update-btn" onclick="updateWidget()">🔄 Update Timeline</button>
+            <div class="timestamp">Last updated: Aug 28, 2025 00:21</div>
+        </div>
+    </div>
+</body>
+</html>
