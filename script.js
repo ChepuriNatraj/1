@@ -58,6 +58,12 @@ class TaskManager {
             this.elements.recalcBtn.addEventListener('click', () => this.recalculateUrgency());
         }
 
+        // Sync setup button
+        const setupSyncBtn = document.getElementById('setup-sync-btn');
+        if (setupSyncBtn) {
+            setupSyncBtn.addEventListener('click', () => this.setupSync());
+        }
+
         // Tab switching
         this.elements.tabButtons.forEach(button => {
             button.addEventListener('click', () => this.switchTab(button.dataset.tab));
@@ -106,6 +112,11 @@ class TaskManager {
             zone.addEventListener('drop', (e) => this.handleDrop(e));
             zone.addEventListener('dragenter', (e) => this.handleDragEnter(e));
             zone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+            
+            // Touch events for mobile support
+            zone.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+            zone.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+            zone.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
         });
     }
 
@@ -156,6 +167,11 @@ class TaskManager {
         // Add drag events
         taskElement.addEventListener('dragstart', (e) => this.handleDragStart(e, task));
         taskElement.addEventListener('dragend', (e) => this.handleDragEnd(e));
+
+        // Add touch events for mobile
+        taskElement.addEventListener('touchstart', (e) => this.handleTaskTouchStart(e, task), { passive: false });
+        taskElement.addEventListener('touchmove', (e) => this.handleTaskTouchMove(e), { passive: false });
+        taskElement.addEventListener('touchend', (e) => this.handleTaskTouchEnd(e), { passive: false });
 
         // Add click event for task details
         taskElement.addEventListener('click', (e) => {
@@ -671,6 +687,11 @@ class TaskManager {
             taskIdCounter: this.taskIdCounter
         };
         localStorage.setItem('eisenhowerMatrixData', JSON.stringify(data));
+        
+        // Trigger sync if available
+        if (window.taskSync) {
+            taskSync.onDataChange();
+        }
     }
 
     loadData() {
@@ -682,6 +703,158 @@ class TaskManager {
 
             // Render existing tasks
             this.tasks.forEach(task => this.renderTask(task));
+        }
+    }
+
+    // Touch event handlers for mobile support
+    handleTouchStart(e) {
+        this.touchStartX = e.touches[0].clientX;
+        this.touchStartY = e.touches[0].clientY;
+        this.touchTarget = e.target.closest('.task-item');
+        
+        if (this.touchTarget) {
+            this.touchTarget.classList.add('touch-active');
+        }
+    }
+
+    handleTouchMove(e) {
+        if (!this.touchTarget) return;
+        
+        e.preventDefault();
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - this.touchStartX;
+        const deltaY = touch.clientY - this.touchStartY;
+        
+        // If significant movement, show visual feedback
+        if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+            this.touchTarget.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+            this.touchTarget.classList.add('touch-dragging');
+        }
+    }
+
+    handleTouchEnd(e) {
+        if (!this.touchTarget) return;
+        
+        const touch = e.changedTouches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetZone = element?.closest('.task-zone');
+        
+        // Reset visual state
+        this.touchTarget.style.transform = '';
+        this.touchTarget.classList.remove('touch-active', 'touch-dragging');
+        
+        if (targetZone) {
+            const targetQuadrant = targetZone.id.replace('-zone', '');
+            const taskElement = this.touchTarget;
+            const taskId = parseInt(taskElement.dataset.taskId);
+            const task = this.tasks.find(t => t.id === taskId);
+            
+            if (task && task.quadrant !== targetQuadrant) {
+                // Move task to new quadrant
+                task.quadrant = targetQuadrant;
+                this.updateQuadrantCount(task.quadrant);
+                this.updateQuadrantCount(taskElement.parentElement.id.replace('-zone', ''));
+                
+                targetZone.appendChild(taskElement);
+                this.saveData();
+                this.showNotification(`Task moved to ${this.getQuadrantName(targetQuadrant)}`, 'success');
+            }
+        }
+        
+        this.touchTarget = null;
+    }
+
+    getQuadrantName(quadrant) {
+        const names = {
+            'urgent-important': 'Do First',
+            'not-urgent-important': 'Schedule',
+            'urgent-not-important': 'Delegate',
+            'not-urgent-not-important': 'Eliminate'
+        };
+        return names[quadrant] || quadrant;
+    }
+
+    // Task-specific touch handlers
+    handleTaskTouchStart(e, task) {
+        if (e.target.closest('.task-actions')) return; // Don't interfere with buttons
+        
+        this.touchStartX = e.touches[0].clientX;
+        this.touchStartY = e.touches[0].clientY;
+        this.touchTarget = e.currentTarget;
+        this.touchTask = task;
+        
+        this.touchTarget.classList.add('touch-active');
+    }
+
+    handleTaskTouchMove(e) {
+        if (!this.touchTarget || e.target.closest('.task-actions')) return;
+        
+        e.preventDefault();
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - this.touchStartX;
+        const deltaY = touch.clientY - this.touchStartY;
+        
+        // If significant movement, show visual feedback
+        if (Math.abs(deltaX) > 15 || Math.abs(deltaY) > 15) {
+            this.touchTarget.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+            this.touchTarget.classList.add('touch-dragging');
+            
+            // Highlight drop zones
+            document.querySelectorAll('.task-zone').forEach(zone => {
+                zone.classList.add('drop-hint');
+            });
+        }
+    }
+
+    handleTaskTouchEnd(e) {
+        if (!this.touchTarget) return;
+        
+        const touch = e.changedTouches[0];
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetZone = element?.closest('.task-zone');
+        
+        // Reset visual state
+        this.touchTarget.style.transform = '';
+        this.touchTarget.classList.remove('touch-active', 'touch-dragging');
+        
+        // Remove drop hints
+        document.querySelectorAll('.task-zone').forEach(zone => {
+            zone.classList.remove('drop-hint');
+        });
+        
+        if (targetZone && this.touchTask) {
+            const targetQuadrant = targetZone.id.replace('-zone', '');
+            
+            if (this.touchTask.quadrant !== targetQuadrant) {
+                // Update task quadrant
+                const oldQuadrant = this.touchTask.quadrant;
+                this.touchTask.quadrant = targetQuadrant;
+                
+                // Move DOM element
+                targetZone.appendChild(this.touchTarget);
+                
+                // Update counts
+                this.updateQuadrantCount(oldQuadrant);
+                this.updateQuadrantCount(targetQuadrant);
+                
+                // Save data
+                this.saveData();
+                this.showNotification(`Task moved to ${this.getQuadrantName(targetQuadrant)}`, 'success');
+            }
+        }
+        
+        this.touchTarget = null;
+        this.touchTask = null;
+    }
+
+    async setupSync() {
+        if (window.taskSync) {
+            const success = await taskSync.setupGitHubSync();
+            if (success) {
+                document.getElementById('setup-sync-btn').textContent = '✅ Sync Enabled';
+                document.getElementById('setup-sync-btn').disabled = true;
+                this.showNotification('Cross-device sync enabled! Your tasks will now sync between devices.', 'success');
+            }
         }
     }
 }

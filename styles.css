@@ -946,17 +946,267 @@ button.secondary:hover {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .app-container {
+        padding: 10px;
+        margin: 0;
+    }
+    
+    .app-header h1 {
+        font-size: 1.8rem;
+    }
+    
     .control-panel {
         flex-direction: column;
         gap: 20px;
+        padding: 15px;
+    }
+    
+    .task-input-section {
+        width: 100%;
+    }
+    
+    .meta-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .meta-field {
+        width: 100%;
+    }
+    
+    .input-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .input-controls button {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    .matrix-container {
+        padding: 15px;
     }
     
     .matrix-grid {
         grid-template-columns: 1fr;
-        grid-template-rows: repeat(4, 1fr);
+        grid-template-rows: repeat(4, auto);
+        gap: 15px;
+        min-height: auto;
+    }
+    
+    .quadrant {
+        min-height: 200px;
+        padding: 15px;
+    }
+    
+    .quadrant-header h3 {
+        font-size: 1.2rem;
+    }
+    
+    .quadrant-subtitle {
+        font-size: 0.85rem;
+    }
+    
+    .task-item {
+        margin-bottom: 10px;
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+    
+    .task-actions {
+        flex-direction: column;
+        gap: 5px;
+        margin-top: 10px;
+    }
+    
+    .task-actions button {
+        width: 100%;
+        padding: 8px;
+        font-size: 0.8rem;
     }
     
     .stats-panel {
         justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .stat {
+        min-width: 120px;
+    }
+    
+    .progress-section {
+        padding: 15px;
+    }
+    
+    .matrix-labels {
+        display: none; /* Hide axis labels on mobile for cleaner look */
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .app-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .app-header p {
+        font-size: 0.85rem;
+    }
+    
+    .control-panel {
+        padding: 10px;
+    }
+    
+    .quadrant {
+        min-height: 150px;
+        padding: 10px;
+    }
+    
+    .quadrant-header h3 {
+        font-size: 1rem;
+    }
+    
+    .task-item {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+    }
+}
+
+/* Touch interaction styles */
+.task-item.touch-active {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    position: relative;
+}
+
+.task-item.touch-dragging {
+    opacity: 0.8;
+    transform: scale(1.05) rotate(2deg);
+    transition: none;
+}
+
+/* Drop zone hints */
+.task-zone.drop-hint {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px dashed rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+}
+
+/* Better touch targets */
+@media (max-width: 768px) {
+    .task-actions button {
+        min-height: 44px;
+        min-width: 44px;
+        touch-action: manipulation;
+    }
+    
+    .input-controls button {
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+    
+    .task-item {
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+    }
+    
+    .task-zone {
+        min-height: 120px;
+        transition: all 0.2s ease;
+    }
+}
+
+/* Sync Controls */
+.sync-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.sync-status {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.sync-status.offline {
+    background: rgba(128, 128, 128, 0.2);
+    color: #999;
+}
+
+.sync-status.syncing {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    animation: pulse 1.5s infinite;
+}
+
+.sync-status.synced {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.sync-status.error {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.sync-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.sync-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.sync-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@media (max-width: 768px) {
+    .sync-controls {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .sync-btn {
+        text-align: center;
     }
 }

@@ -11,6 +11,10 @@
         <header class="app-header">
             <h1>Task Optimization Canvas</h1>
             <p>Organize your tasks using the Eisenhower Matrix for maximum productivity</p>
+            <div class="sync-controls">
+                <div id="sync-status" class="sync-status offline">📱 Offline</div>
+                <button id="setup-sync-btn" class="sync-btn">🔄 Enable Sync</button>
+            </div>
         </header>
 
         <div class="control-panel">
@@ -99,7 +103,6 @@
             <div class="progress-tabs">
                 <button class="tab-button active" data-tab="completed">Completed Tasks</button>
                 <button class="tab-button" data-tab="analytics">Analytics</button>
-                <button class="tab-button" data-tab="resources">Resources</button>
             </div>
             
             <div class="tab-content active" id="completed-tab">
@@ -159,6 +162,7 @@
         </div>
     </div>
 
+    <script src="sync.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
