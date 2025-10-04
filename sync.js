@@ -13,6 +13,12 @@ class TaskSync {
         this.syncEnabled = !!this.githubToken;
         
         this.setupEventListeners();
+
+        if (this.syncEnabled) {
+            this.syncData();
+        } else {
+            this.updateSyncStatus('offline');
+        }
     }
 
     setupEventListeners() {
@@ -52,14 +58,16 @@ class TaskSync {
 
     async syncData() {
         if (!this.syncEnabled) return;
+        if (!this.githubToken) {
+            this.syncEnabled = false;
+            this.updateSyncStatus('offline');
+            return;
+        }
 
         try {
-            // Show sync indicator
             this.updateSyncStatus('syncing');
-            
-            // Get remote data
-            const remoteData = await this.getRemoteData();
             const localData = this.getLocalData();
+            const remoteData = await this.getRemoteData();
             
             // Simple merge strategy: use the most recent timestamp
             let mergedData = localData;

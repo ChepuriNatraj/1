@@ -9,15 +9,17 @@ A sophisticated, offline web application for organizing and optimizing your task
 - **Drag & Drop Interface**: Intuitive task movement between quadrants
 - **Task Management**: Add, edit, delete, and complete tasks with ease
 - **Progress Tracking**: Monitor completed tasks and productivity metrics
+- **Search & Filter Toolbar**: Zero in on the work you need by keyword or quadrant
 - **Local Storage**: All data saved locally - no internet required
 
 ### Advanced Features
-- **Task Details**: Rich task descriptions and metadata
-- **Analytics Dashboard**: Productivity scores and focus area insights
-- **Visual Feedback**: Beautiful gradients and smooth animations
-- **Responsive Design**: Works on desktop, tablet, and mobile
-- **Modal Interactions**: Detailed task views with pop-up functionality
+- **Insight Feed**: Automatic log of significant actions and focus shifts
+- **Analytics Dashboard**: Progress ring, quadrant distribution, and active focus indicator
+- **Deadline Alerts**: Snooze-able popup for tasks that need immediate attention
 - **Resources Tab**: Embed and open your custom reference pages (Deadlines, GATE 2026 Timeline)
+- **GitHub Sync (Optional)**: Seamlessly mirror tasks across devices with personal access token support
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Visual Feedback**: Beautiful gradients and smooth animations
 
 ## 📊 Matrix Quadrants
 
@@ -43,7 +45,8 @@ A sophisticated, offline web application for organizing and optimizing your task
 1. **Launch**: Open `index.html` in any modern web browser
 2. **Add Tasks**: Enter task title and optional description
 3. **Categorize**: Drag tasks to appropriate matrix quadrants
-4. **Track Progress**: Mark tasks complete and monitor analytics
+4. **Search & Filter**: Use the toolbar to focus on keywords or a single quadrant
+5. **Track Progress**: Mark tasks complete and monitor analytics
 
 ### Task Management
 - **Create**: Use the input fields to add new tasks
@@ -51,11 +54,13 @@ A sophisticated, offline web application for organizing and optimizing your task
 - **Edit**: Click the edit button (✎) to modify task details
 - **Complete**: Click the checkmark (✓) to mark tasks done
 - **Delete**: Click the X (✕) to remove tasks permanently
+- **Spot Focus**: The header “Active Focus” badge highlights the busiest quadrant at a glance
 
 ### Progress Tracking
 - **Completed Tasks Tab**: View all finished tasks with completion dates
-- **Analytics Tab**: See productivity scores and focus area insights
-- **Real-time Stats**: Monitor total tasks and completion count
+- **Analytics Tab**: Inspect completion rate, quadrant distribution, and latest insights
+- **Insight Log**: Review the automated activity feed for recent changes
+- **Real-time Stats**: Monitor total tasks, completion count, and your current focus area
 
 ## 💾 Data Management
 
@@ -64,6 +69,12 @@ A sophisticated, offline web application for organizing and optimizing your task
 - No accounts or cloud sync required
 - Data persists between browser sessions
 - Clear all data with the "Clear All" button
+
+### Optional GitHub Sync
+- Click **“🔄 Enable Sync”** in the header and paste a GitHub personal access token with `repo` scope
+- The app stores the token locally and syncs to `tasks.json` in your configured repository every 30 seconds
+- Sync also triggers on focus and whenever local data changes
+- See `SYNC_SETUP.md` for a step-by-step walkthrough, security notes, and troubleshooting tips
 
 ### Export/Import
 - Data stored in JSON format in localStorage
@@ -105,7 +116,9 @@ REFRESH/
 ├── index.html          # Main application file
 ├── styles.css          # Complete styling and layout
 ├── script.js           # Application logic and functionality
-└── README.md           # This documentation
+├── sync.js             # GitHub synchronization helper (optional)
+├── README.md           # This documentation
+├── SYNC_SETUP.md       # Detailed GitHub sync setup guide
 └── Deadlines.html      # (Optional) Your deadlines page (place here)
 └── GATE_2026_Timeline.html # (Optional) Your GATE timeline page (place here)
 ```
@@ -122,15 +135,6 @@ REFRESH/
 - Implement task priorities within quadrants
 - Add team collaboration features
 - Export to PDF or other formats
-
-### Resources Tab Setup
-1. Place `Deadlines.html` and `GATE_2026_Timeline.html` in the same folder as `index.html`.
-2. Open the app and click the Resources tab.
-3. Use the left buttons to load inside the embedded viewer, or the orange buttons to open in a new browser tab.
-4. If files are elsewhere, move or copy them here to avoid cross-origin/file permission issues.
-5. Rename files? Update the `data-file` attributes in `index.html` accordingly.
-
-If you run this over plain `file://` and an embedded page doesn't render, try launching a lightweight local server (e.g., `python -m http.server`) for full iframe support.
 
 ## 📈 Productivity Tips
 

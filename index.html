@@ -9,51 +9,106 @@
 <body>
     <div class="app-container">
         <header class="app-header">
-            <h1>Task Optimization Canvas</h1>
-            <p>Organize your tasks using the Eisenhower Matrix for maximum productivity</p>
-            <div class="sync-controls">
-                <div id="sync-status" class="sync-status offline">📱 Offline</div>
-                <button id="setup-sync-btn" class="sync-btn">🔄 Enable Sync</button>
+            <div class="header-main">
+                <h1>Task Optimization Canvas</h1>
+                <p>Strategize, prioritize, and execute with an enhanced Eisenhower Matrix dashboard.</p>
+            </div>
+            <div class="header-meta">
+                <div class="sync-controls">
+                    <div id="sync-status" class="sync-status offline">📱 Offline</div>
+                    <button id="setup-sync-btn" class="sync-btn">🔄 Enable Sync</button>
+                </div>
+                <div class="quick-peek">
+                    <span class="peek-label">Active Focus</span>
+                    <span class="peek-value" id="active-quadrant">—</span>
+                </div>
             </div>
         </header>
 
-        <div class="control-panel">
-            <div class="task-input-section">
-                <input type="text" id="new-task" placeholder="Enter your task..." maxlength="100" />
-                <textarea id="task-description" placeholder="Task description (optional)..." rows="2"></textarea>
-                <div class="meta-row">
-                    <div class="meta-field">
-                        <label for="due-date">Time Limit</label>
-                        <input type="datetime-local" id="due-date" />
+        <section class="dashboard-grid">
+            <div class="control-panel">
+                <div class="toolbar">
+                    <div class="search-field">
+                        <input type="search" id="task-search" placeholder="Search tasks or descriptions" aria-label="Search tasks" />
                     </div>
-                    <div class="meta-field">
-                        <label for="importance">Importance</label>
-                        <select id="importance">
-                            <option value="important" selected>Important</option>
-                            <option value="not-important">Not Important</option>
+                    <div class="filter-field">
+                        <label for="quadrant-filter">View</label>
+                        <select id="quadrant-filter">
+                            <option value="all" selected>All Quadrants</option>
+                            <option value="urgent-important">Do First</option>
+                            <option value="not-urgent-important">Schedule</option>
+                            <option value="urgent-not-important">Delegate</option>
+                            <option value="not-urgent-not-important">Eliminate</option>
                         </select>
+                        <button id="reset-filter" class="ghost-btn" type="button">Reset</button>
                     </div>
                 </div>
-                <div class="input-controls">
-                    <button id="add-task">+ Add Task</button>
-                    <button id="clear-all" class="secondary">Clear All</button>
-                    <button id="recalc-urgency" class="secondary small">Recalculate Urgency</button>
-                </div>
-            </div>
-            
-            <div class="stats-panel">
-                <div class="stat">
-                    <span class="stat-number" id="total-tasks">0</span>
-                    <span class="stat-label">Total Tasks</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-number" id="completed-count">0</span>
-                    <span class="stat-label">Completed</span>
-                </div>
-            </div>
-        </div>
 
-        <div class="matrix-container">
+                <div class="task-input-section">
+                    <div class="input-group">
+                        <label for="new-task">Task Name</label>
+                        <input type="text" id="new-task" placeholder="What needs your attention?" maxlength="100" />
+                    </div>
+                    <div class="input-group">
+                        <label for="task-description">Details</label>
+                        <textarea id="task-description" placeholder="Add context, links, or next steps..." rows="3"></textarea>
+                    </div>
+                    <div class="meta-row">
+                        <div class="meta-field">
+                            <label for="due-date">Time Limit</label>
+                            <input type="datetime-local" id="due-date" />
+                        </div>
+                        <div class="meta-field">
+                            <label for="importance">Importance</label>
+                            <select id="importance">
+                                <option value="important" selected>Important</option>
+                                <option value="not-important">Not Important</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-controls">
+                        <button id="add-task" type="button">Add Task</button>
+                        <button id="clear-all" class="secondary" type="button">Clear All</button>
+                        <button id="recalc-urgency" class="secondary small" type="button">Recalculate Urgency</button>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="insights-panel">
+                <div class="stats-panel">
+                    <div class="stat">
+                        <span class="stat-number" id="total-tasks">0</span>
+                        <span class="stat-label">Total Tasks</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number" id="completed-count">0</span>
+                        <span class="stat-label">Completed</span>
+                    </div>
+                </div>
+                <div class="progress-card">
+                    <h3>Progress Snapshot</h3>
+                    <div class="progress-wrapper">
+                        <div class="progress-ring">
+                            <svg viewBox="0 0 36 36" class="circular-chart">
+                                <path class="circle-bg" d="M18 2.0845
+                                        a 15.9155 15.9155 0 0 1 0 31.831
+                                        a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="progress-ring" class="circle" stroke-dasharray="0, 100" d="M18 2.0845
+                                        a 15.9155 15.9155 0 0 1 0 31.831
+                                        a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div class="progress-value" id="productivity-score">0%</div>
+                        </div>
+                        <div class="progress-meta">
+                            <p class="progress-label">Completion Rate</p>
+                            <p class="progress-secondary" id="focus-areas">No focus data yet</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section class="matrix-container">
             <div class="matrix-labels">
                 <div class="axis-label vertical">IMPORTANT</div>
                 <div class="axis-label horizontal">URGENT</div>
@@ -98,8 +153,11 @@
             </div>
         </div>
 
-        <div class="progress-section">
-            <h2>Progress Tracker</h2>
+        <section class="progress-section">
+            <div class="section-heading">
+                <h2>Progress Tracker</h2>
+                <p>Review what’s done and analyze your productivity velocity.</p>
+            </div>
             <div class="progress-tabs">
                 <button class="tab-button active" data-tab="completed">Completed Tasks</button>
                 <button class="tab-button" data-tab="analytics">Analytics</button>
@@ -112,28 +170,33 @@
             <div class="tab-content" id="analytics-tab">
                 <div class="analytics-grid">
                     <div class="analytics-card">
-                        <h4>Productivity Score</h4>
-                        <div class="score" id="productivity-score">0%</div>
+                        <h4>Time Distribution</h4>
+                        <div class="distribution" id="analytics-distribution">
+                            <div class="distribution-row">
+                                <span>Do First</span>
+                                <div class="distribution-bar"><span data-quadrant="urgent-important"></span></div>
+                            </div>
+                            <div class="distribution-row">
+                                <span>Schedule</span>
+                                <div class="distribution-bar"><span data-quadrant="not-urgent-important"></span></div>
+                            </div>
+                            <div class="distribution-row">
+                                <span>Delegate</span>
+                                <div class="distribution-bar"><span data-quadrant="urgent-not-important"></span></div>
+                            </div>
+                            <div class="distribution-row">
+                                <span>Eliminate</span>
+                                <div class="distribution-bar"><span data-quadrant="not-urgent-not-important"></span></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="analytics-card">
-                        <h4>Focus Areas</h4>
-                        <div id="focus-areas">No data yet</div>
+                        <h4>Insight Log</h4>
+                        <ul id="insight-log" class="insight-log"></ul>
                     </div>
                 </div>
             </div>
-
-            <div class="tab-content" id="resources-tab">
-                <div class="resources-intro">Quick access to your timeline & deadlines pages. Place your existing files (Deadlines.html and GATE_2026_Timeline.html) in the same folder as this app (or update the file names below) for them to load here.</div>
-                <div class="resource-links">
-                    <button class="resource-link" data-file="Deadlines.html">Open Deadlines</button>
-                    <button class="resource-link external" data-url="D:/REDEFINE/WEBSITE/index.html">Open REDEFINE Website</button>
-                </div>
-                <div class="resource-viewer-wrapper">
-                    <iframe id="resource-frame" title="Resource Viewer" sandbox="allow-same-origin allow-scripts allow-forms" referrerpolicy="no-referrer"></iframe>
-                </div>
-                <div class="resource-status" id="resource-status">Select a resource to view it.</div>
-            </div>
-        </div>
+        </section>
     </div>
 
     <!-- Task Detail Modal -->

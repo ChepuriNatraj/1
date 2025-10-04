@@ -6,6 +6,10 @@ class TaskManager {
         this.taskIdCounter = 1;
         
         this.initializeElements();
+        this.filters = { search: '', quadrant: 'all' };
+        this.insights = [];
+        this.initializeEmptyStates();
+    this.renderInsights();
         this.bindEvents();
         this.loadData();
         this.updateStats();
@@ -21,30 +25,43 @@ class TaskManager {
             dueDateInput: document.getElementById('due-date'),
             importanceSelect: document.getElementById('importance'),
             recalcBtn: document.getElementById('recalc-urgency'),
+            taskSearch: document.getElementById('task-search'),
+            quadrantFilter: document.getElementById('quadrant-filter'),
+            resetFilter: document.getElementById('reset-filter'),
             totalTasks: document.getElementById('total-tasks'),
             completedCount: document.getElementById('completed-count'),
             productivityScore: document.getElementById('productivity-score'),
             focusAreas: document.getElementById('focus-areas'),
+            activeQuadrant: document.getElementById('active-quadrant'),
+            progressRingPath: document.getElementById('progress-ring'),
             completedTasks: document.getElementById('completed-tasks'),
             modal: document.getElementById('task-modal'),
             modalBody: document.getElementById('modal-body'),
             closeModal: document.querySelector('.close'),
             tabButtons: document.querySelectorAll('.tab-button'),
-            resourceLinks: document.querySelectorAll('.resource-link'),
-            resourceFrame: document.getElementById('resource-frame'),
-            resourceStatus: document.getElementById('resource-status'),
             deadlinePopup: document.getElementById('deadline-popup'),
             deadlinePopupBody: document.getElementById('deadline-popup-body'),
             deadlineClose: document.getElementById('deadline-close'),
             deadlineSnooze: document.getElementById('deadline-snooze'),
             deadlineDismiss: document.getElementById('deadline-dismiss'),
+            insightLog: document.getElementById('insight-log'),
             taskZones: {
                 'urgent-important': document.getElementById('urgent-important-zone'),
                 'not-urgent-important': document.getElementById('not-urgent-important-zone'),
                 'urgent-not-important': document.getElementById('urgent-not-important-zone'),
                 'not-urgent-not-important': document.getElementById('not-urgent-not-important-zone')
-            }
+            },
+            distributionBars: document.querySelectorAll('#analytics-distribution .distribution-bar span')
         };
+    }
+
+    initializeEmptyStates() {
+        Object.entries(this.elements.taskZones).forEach(([quadrant, zone]) => {
+            if (!zone) return;
+            zone.dataset.emptyState = `No tasks in ${this.getQuadrantShortName(quadrant)}`;
+            zone.classList.add('empty');
+        });
+        this.updateEmptyStates(false);
     }
 
     bindEvents() {
@@ -58,6 +75,29 @@ class TaskManager {
             this.elements.recalcBtn.addEventListener('click', () => this.recalculateUrgency());
         }
 
+        if (this.elements.taskSearch) {
+            this.elements.taskSearch.addEventListener('input', (e) => {
+                this.filters.search = e.target.value.trim().toLowerCase();
+                this.applyFilters();
+            });
+        }
+
+        if (this.elements.quadrantFilter) {
+            this.elements.quadrantFilter.addEventListener('change', (e) => {
+                this.filters.quadrant = e.target.value;
+                this.applyFilters();
+            });
+        }
+
+        if (this.elements.resetFilter) {
+            this.elements.resetFilter.addEventListener('click', () => {
+                this.filters = { search: '', quadrant: 'all' };
+                if (this.elements.taskSearch) this.elements.taskSearch.value = '';
+                if (this.elements.quadrantFilter) this.elements.quadrantFilter.value = 'all';
+                this.applyFilters();
+            });
+        }
+
         // Sync setup button
         const setupSyncBtn = document.getElementById('setup-sync-btn');
         if (setupSyncBtn) {
@@ -67,26 +107,6 @@ class TaskManager {
         // Tab switching
         this.elements.tabButtons.forEach(button => {
             button.addEventListener('click', () => this.switchTab(button.dataset.tab));
-        });
-
-        // Resource link handlers (embedded and external)
-        this.elements.resourceLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                if (link.dataset.url) {
-                    // External URL - open in new tab
-                    try {
-                        window.open('file:///' + link.dataset.url.replace(/\\/g, '/'), '_blank');
-                    } catch (err) {
-                        this.showNotification('Unable to open external resource.', 'error');
-                    }
-                } else {
-                    // Local file - embed in iframe
-                    const file = link.dataset.file;
-                    if (file === 'Deadlines.html') {
-                        this.loadResource(file);
-                    }
-                }
-            });
         });
 
         // Modal events
@@ -129,15 +149,17 @@ class TaskManager {
             return;
         }
 
+        const quadrant = this.deriveQuadrant(this.elements.dueDateInput?.value, this.elements.importanceSelect?.value);
+
         const task = {
             id: this.taskIdCounter++,
             title,
             description,
+            quadrant,
             dueDate: this.elements.dueDateInput?.value || null,
             importance: this.elements.importanceSelect?.value || 'important',
-            quadrant: this.deriveQuadrant(this.elements.dueDateInput?.value, this.elements.importanceSelect?.value),
             createdAt: new Date().toISOString(),
-            priority: this.calculatePriority('urgent-important')
+            priority: this.calculatePriority(quadrant)
         };
 
         this.tasks.push(task);
@@ -146,6 +168,7 @@ class TaskManager {
         this.saveData();
         this.updateStats();
         this.showNotification('Task added successfully!', 'success');
+        this.logInsight(`Added task "${title}" to ${this.getQuadrantShortName(quadrant)}`);
     }
 
     renderTask(task) {
@@ -182,6 +205,70 @@ class TaskManager {
 
         this.elements.taskZones[task.quadrant].appendChild(taskElement);
         this.updateQuadrantCount(task.quadrant);
+        this.applyFilterToElement(taskElement, task);
+        this.updateEmptyStates(this.isFilterActive());
+    }
+
+    applyFilters() {
+        Object.values(this.elements.taskZones).forEach(zone => {
+            if (!zone) return;
+            zone.querySelectorAll('.task-item').forEach(element => this.applyFilterToElement(element));
+        });
+        this.updateEmptyStates(this.isFilterActive());
+    }
+
+    applyFilterToElement(element, task = null) {
+        if (!element) return;
+        const taskId = parseInt(element.dataset.taskId, 10);
+        const taskData = task || this.tasks.find(t => t.id === taskId);
+        if (!taskData) {
+            element.classList.remove('hidden-by-filter');
+            return;
+        }
+
+        const haystack = `${taskData.title} ${taskData.description || ''}`.toLowerCase();
+        const matchesSearch = !this.filters.search || haystack.includes(this.filters.search);
+        const matchesQuadrant = this.filters.quadrant === 'all' || taskData.quadrant === this.filters.quadrant;
+        const visible = matchesSearch && matchesQuadrant;
+
+        element.classList.toggle('hidden-by-filter', !visible);
+    }
+
+    updateEmptyStates(isFiltered = false) {
+        Object.entries(this.elements.taskZones).forEach(([quadrant, zone]) => {
+            if (!zone) return;
+            const visibleItems = Array.from(zone.querySelectorAll('.task-item')).filter(item => !item.classList.contains('hidden-by-filter'));
+            const hasVisible = visibleItems.length > 0;
+            zone.classList.toggle('empty', !hasVisible);
+            if (!hasVisible) {
+                zone.dataset.emptyState = isFiltered ? 'No matching tasks' : `No tasks in ${this.getQuadrantShortName(quadrant)}`;
+            } else {
+                zone.dataset.emptyState = '';
+            }
+        });
+    }
+
+    isFilterActive() {
+        return Boolean((this.filters.search && this.filters.search.length > 0) || (this.filters.quadrant && this.filters.quadrant !== 'all'));
+    }
+
+    logInsight(message) {
+        if (!message) return;
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        this.insights.unshift(`[${timestamp}] ${message}`);
+        if (this.insights.length > 8) {
+            this.insights = this.insights.slice(0, 8);
+        }
+        this.renderInsights();
+    }
+
+    renderInsights() {
+        if (!this.elements.insightLog) return;
+        if (!this.insights.length) {
+            this.elements.insightLog.innerHTML = '<li>No insights yet. Actions you take will appear here.</li>';
+            return;
+        }
+        this.elements.insightLog.innerHTML = this.insights.map(item => `<li>${item}</li>`).join('');
     }
 
     handleDragStart(e, task) {
@@ -246,6 +333,8 @@ class TaskManager {
         this.updateStats();
         
         this.showNotification(`Task moved to ${this.getQuadrantName(newQuadrant)}`, 'success');
+        this.logInsight(`Moved task "${task.title}" to ${this.getQuadrantShortName(newQuadrant)}`);
+        this.applyFilters();
     }
 
     completeTask(taskId) {
@@ -267,6 +356,8 @@ class TaskManager {
         this.saveData();
         this.updateStats();
         this.showNotification('Task completed! 🎉', 'success');
+        this.logInsight(`Completed task "${task.title}"`);
+        this.applyFilters();
     }
 
     deleteTask(taskId) {
@@ -285,6 +376,8 @@ class TaskManager {
         this.saveData();
         this.updateStats();
         this.showNotification('Task deleted', 'info');
+        this.logInsight(`Deleted task "${task.title}"`);
+        this.applyFilters();
     }
 
     editTask(taskId) {
@@ -305,17 +398,18 @@ class TaskManager {
 
             this.saveData();
             this.showNotification('Task updated!', 'success');
+            this.logInsight(`Updated task "${task.title}"`);
         }
     }
 
     showTaskDetails(task) {
-        const quadrantName = this.getQuadrantName(task.quadrant);
+        const quadrantInfo = this.getQuadrantInfo(task.quadrant);
         const createdDate = new Date(task.createdAt).toLocaleDateString();
         
         this.elements.modalBody.innerHTML = `
             <p><strong>Title:</strong> ${task.title}</p>
             ${task.description ? `<p><strong>Description:</strong> ${task.description}</p>` : ''}
-            <p><strong>Category:</strong> ${quadrantName}</p>
+            <p><strong>Category:</strong> ${quadrantInfo.display}</p>
             ${task.dueDate ? `<p><strong>Time Limit:</strong> ${new Date(task.dueDate).toLocaleString()}</p>` : ''}
             <p><strong>Importance:</strong> ${task.importance === 'not-important' ? 'Not Important' : 'Important'}</p>
             <p><strong>Priority:</strong> ${task.priority}</p>
@@ -344,13 +438,6 @@ class TaskManager {
             this.renderCompletedTasks();
         } else if (tabName === 'analytics') {
             this.updateAnalytics();
-        } else if (tabName === 'resources') {
-            // Ensure iframe sizing recalculates (some browsers need a redraw)
-            if (this.elements.resourceFrame) {
-                setTimeout(() => {
-                    this.elements.resourceFrame.style.display = 'block';
-                }, 0);
-            }
         }
     }
 
@@ -368,10 +455,10 @@ class TaskManager {
             .forEach(task => {
                 const taskElement = document.createElement('div');
                 taskElement.className = 'completed-task ' + task.quadrant;
-                const quadrantName = this.getQuadrantName(task.quadrant);
+                const quadrantInfo = this.getQuadrantInfo(task.quadrant);
                 taskElement.innerHTML = `
                     <div class="completed-task-header">
-                        <span class="quadrant-badge ${task.quadrant}">${quadrantName.split('(')[0].trim()}</span>
+                        <span class="quadrant-badge ${task.quadrant}">${quadrantInfo.short}</span>
                         <span class="completed-task-date">${new Date(task.completedAt).toLocaleDateString()}</span>
                     </div>
                     <div class="completed-task-title">${task.title}</div>
@@ -379,40 +466,6 @@ class TaskManager {
                 `;
                 container.appendChild(taskElement);
             });
-    }
-
-    loadResource(fileName) {
-        if (!this.elements.resourceFrame) return;
-        // Provide feedback
-        if (this.elements.resourceStatus) {
-            this.elements.resourceStatus.textContent = 'Loading ' + fileName + ' ...';
-        }
-
-        // Basic existence heuristic: try fetch (works for same-folder files when served via http). If running via file://, fetch may be blocked; fallback to setting src directly.
-        const setFrame = () => {
-            this.elements.resourceFrame.src = fileName;
-            if (this.elements.resourceStatus) {
-                this.elements.resourceStatus.textContent = 'Showing: ' + fileName;
-            }
-        };
-
-        try {
-            if (location.protocol.startsWith('http')) {
-                fetch(fileName, { method: 'HEAD' })
-                    .then(resp => {
-                        if (!resp.ok) throw new Error();
-                        setFrame();
-                    })
-                    .catch(() => {
-                        setFrame();
-                    });
-            } else {
-                // file:// context
-                setFrame();
-            }
-        } catch (e) {
-            setFrame();
-        }
     }
 
     // Removed local file loader & external open for simplified UI
@@ -533,19 +586,53 @@ class TaskManager {
 
     updateAnalytics() {
         const totalTasks = this.tasks.length + this.completedTasks.length;
-        const completedPercentage = totalTasks > 0 ? Math.round((this.completedTasks.length / totalTasks) * 100) : 0;
-        
-        this.elements.productivityScore.textContent = `${completedPercentage}%`;
+        const completionRatio = totalTasks > 0 ? Math.round((this.completedTasks.length / totalTasks) * 100) : 0;
 
-        // Calculate focus areas
+        if (this.elements.productivityScore) {
+            this.elements.productivityScore.textContent = `${completionRatio}%`;
+        }
+        this.updateProgressRing(completionRatio);
+
         const quadrantCounts = this.getQuadrantCounts();
         const maxQuadrant = Object.entries(quadrantCounts)
-            .reduce((max, [quadrant, count]) => count > max.count ? {quadrant, count} : max, {count: 0});
+            .reduce((max, [quadrant, count]) => (count > max.count ? { quadrant, count } : max), { quadrant: null, count: 0 });
 
-        if (maxQuadrant.count > 0) {
-            this.elements.focusAreas.textContent = `Most tasks in: ${this.getQuadrantName(maxQuadrant.quadrant)}`;
+        if (this.elements.focusAreas) {
+            this.elements.focusAreas.textContent = maxQuadrant.count > 0
+                ? `Primary focus: ${this.getQuadrantDisplayName(maxQuadrant.quadrant)}`
+                : 'No focus area data yet';
+        }
+
+        this.updateActiveQuadrant(quadrantCounts, maxQuadrant);
+        this.updateDistribution(quadrantCounts);
+    }
+
+    updateProgressRing(percent) {
+        if (!this.elements.progressRingPath) return;
+        const normalized = Math.max(0, Math.min(100, percent));
+        this.elements.progressRingPath.style.strokeDasharray = `${normalized}, 100`;
+    }
+
+    updateDistribution(quadrantCounts) {
+        if (!this.elements.distributionBars || !this.elements.distributionBars.length) return;
+        const total = Object.values(quadrantCounts).reduce((sum, count) => sum + count, 0);
+        this.elements.distributionBars.forEach(bar => {
+            const quadrant = bar.dataset.quadrant;
+            const count = quadrantCounts[quadrant] || 0;
+            const percent = total ? Math.round((count / total) * 100) : 0;
+            bar.style.width = `${percent}%`;
+            bar.textContent = percent ? `${percent}%` : '0%';
+        });
+    }
+
+    updateActiveQuadrant(quadrantCounts, maxQuadrant = null) {
+        if (!this.elements.activeQuadrant) return;
+        const resolved = maxQuadrant || Object.entries(quadrantCounts)
+            .reduce((max, [quadrant, count]) => (count > max.count ? { quadrant, count } : max), { quadrant: null, count: 0 });
+        if (resolved.count > 0 && resolved.quadrant) {
+            this.elements.activeQuadrant.textContent = this.getQuadrantShortName(resolved.quadrant);
         } else {
-            this.elements.focusAreas.textContent = 'No focus area data yet';
+            this.elements.activeQuadrant.textContent = '—';
         }
     }
 
@@ -580,6 +667,8 @@ class TaskManager {
         Object.keys(this.elements.taskZones).forEach(quadrant => {
             this.updateQuadrantCount(quadrant);
         });
+
+        this.updateAnalytics();
     }
 
     calculatePriority(quadrant) {
@@ -592,14 +681,22 @@ class TaskManager {
         return priorities[quadrant] || 'Medium';
     }
 
-    getQuadrantName(quadrant) {
-        const names = {
-            'urgent-important': 'Do First (Urgent + Important)',
-            'not-urgent-important': 'Schedule (Important)',
-            'urgent-not-important': 'Delegate (Urgent)',
-            'not-urgent-not-important': 'Eliminate (Neither)'
+    getQuadrantInfo(quadrant) {
+        const mapping = {
+            'urgent-important': { display: 'Do First (Urgent + Important)', short: 'Do First' },
+            'not-urgent-important': { display: 'Schedule (Not Urgent + Important)', short: 'Schedule' },
+            'urgent-not-important': { display: 'Delegate (Urgent + Not Important)', short: 'Delegate' },
+            'not-urgent-not-important': { display: 'Eliminate (Not Urgent + Not Important)', short: 'Eliminate' }
         };
-        return names[quadrant] || 'Unknown';
+        return mapping[quadrant] || { display: 'Unknown Quadrant', short: 'Unknown' };
+    }
+
+    getQuadrantDisplayName(quadrant) {
+        return this.getQuadrantInfo(quadrant).display;
+    }
+
+    getQuadrantShortName(quadrant) {
+        return this.getQuadrantInfo(quadrant).short;
     }
 
     clearInputs() {
@@ -620,6 +717,8 @@ class TaskManager {
         this.saveData();
         this.updateStats();
         this.showNotification('All tasks cleared', 'info');
+        this.logInsight('Cleared all tasks');
+        this.applyFilters();
     }
 
     deriveQuadrant(dueDateValue, importanceValue) {
@@ -654,6 +753,8 @@ class TaskManager {
         this.updateStats();
         this.saveData();
         this.showNotification('Urgency recalculated based on current time limits.', 'info');
+        this.logInsight('Recalculated task urgency');
+        this.applyFilters();
     }
 
     showNotification(message, type = 'info') {
@@ -703,6 +804,9 @@ class TaskManager {
 
             // Render existing tasks
             this.tasks.forEach(task => this.renderTask(task));
+            this.renderCompletedTasks();
+            this.applyFilters();
+            this.updateStats();
         }
     }
 
@@ -750,14 +854,7 @@ class TaskManager {
             const task = this.tasks.find(t => t.id === taskId);
             
             if (task && task.quadrant !== targetQuadrant) {
-                // Move task to new quadrant
-                task.quadrant = targetQuadrant;
-                this.updateQuadrantCount(task.quadrant);
-                this.updateQuadrantCount(taskElement.parentElement.id.replace('-zone', ''));
-                
-                targetZone.appendChild(taskElement);
-                this.saveData();
-                this.showNotification(`Task moved to ${this.getQuadrantName(targetQuadrant)}`, 'success');
+                this.moveTask(task.id, targetQuadrant);
             }
         }
         
@@ -826,20 +923,7 @@ class TaskManager {
             const targetQuadrant = targetZone.id.replace('-zone', '');
             
             if (this.touchTask.quadrant !== targetQuadrant) {
-                // Update task quadrant
-                const oldQuadrant = this.touchTask.quadrant;
-                this.touchTask.quadrant = targetQuadrant;
-                
-                // Move DOM element
-                targetZone.appendChild(this.touchTarget);
-                
-                // Update counts
-                this.updateQuadrantCount(oldQuadrant);
-                this.updateQuadrantCount(targetQuadrant);
-                
-                // Save data
-                this.saveData();
-                this.showNotification(`Task moved to ${this.getQuadrantName(targetQuadrant)}`, 'success');
+                this.moveTask(this.touchTask.id, targetQuadrant);
             }
         }
         
