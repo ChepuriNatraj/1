@@ -2,7 +2,7 @@
 
 > A modern, interactive Eisenhower Matrix web app for prioritizing tasks and boosting productivity.
 
-[![Browser Support](https://img.shields.io/badge/Browser-Chrome%20%7C%20Firefox%20%7C%20Safari%20%7C%20Edge-blue)](https://github.com/ChepuriNatraj/1)
+[![Browser Support](https://img.shields.io/badge/Browser-Chrome%20%7C%20Firefox%20%7C%20Safari%20%7C%20Edge-blue)](https://chepurinatraj.github.io/1/)
 
 Transform your task management with this sleek, offline-first web application built on the timeless Eisenhower Matrix methodology. Visualize, prioritize, and execute your tasks with intuitive drag-and-drop interfaces, real-time analytics, and seamless cross-device synchronization.
 
